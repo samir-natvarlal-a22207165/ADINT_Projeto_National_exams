@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Exams of student {{ student_id }}</h2>
+<table>
+  <thead><tr><th>Exam</th><th>Course</th><th>Date</th></tr></thead>
+  <tbody>
+  {% for e in exams %}
+    <tr><td>{{ e.id }}</td><td>{{ e.course }}</td><td>{{ e.date }}</td></tr>
+  {% else %}
+    <tr><td colspan="3">Not enrolled in any exam.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p><a href="{{ url_for('student_lookup') }}">Look up another student</a></p>
+{% endblock %}

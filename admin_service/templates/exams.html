@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Scheduled exams</h2>
+<table>
+  <thead>
+    <tr><th>Id</th><th>Course</th><th>Date</th><th>Enrolled</th><th>Printing</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+  {% for e in exams %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td>{{ e.course }}</td>
+      <td>{{ e.date }}</td>
+      <td>{{ e.enrollments | length }}</td>
+      <td>{{ "ordered" if e.printing_ordered else "not ordered" }}</td>
+      <td>
+        <a href="{{ url_for('enroll_students', exam_id=e.id) }}">Enroll students</a>
+        {% if not e.printing_ordered %}
+        <form class="inline" method="post" action="{{ url_for('order_printing', exam_id=e.id) }}">
+          <button type="submit">Order printing</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No exams scheduled yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

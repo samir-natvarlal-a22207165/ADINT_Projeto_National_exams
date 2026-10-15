@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Enroll students: exam {{ exam.id }} ({{ exam.course }}, {{ exam.date }})</h2>
+<p>Upload a UTF-8 CSV file with a header containing <code>student_id</code>
+(one positive integer per row). Students already enrolled are ignored.</p>
+<form method="post" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".csv,text/csv" required>
+  <p><button type="submit">Upload</button></p>
+</form>
+
+{% if added is defined %}
+  <div class="msg ok">{{ added }} student(s) enrolled, {{ duplicates }} already enrolled.</div>
+  {% if errors %}
+    <div class="msg error">
+      <strong>{{ errors | length }} row(s) skipped:</strong>
+      <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+{% endif %}
+
+<h3>Currently enrolled ({{ exam.enrollments | length }})</h3>
+<p>{% for en in exam.enrollments | sort(attribute='student_id') %}{{ en.student_id }}{% if not loop.last %}, {% endif %}{% else %}nobody yet{% endfor %}</p>
+<p><a href="{{ url_for('list_exams') }}">Back to exams</a></p>
+{% endblock %}

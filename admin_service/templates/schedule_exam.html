@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Schedule an exam</h2>
+<form method="post">
+  <label for="course">Course</label>
+  <input type="text" name="course" id="course" required value="{{ request.form.get('course', '') }}">
+
+  <label for="date">Date</label>
+  <input type="date" name="date" id="date" required value="{{ request.form.get('date', '') }}">
+
+  <p><button type="submit">Schedule</button></p>
+</form>
+{% endblock %}
