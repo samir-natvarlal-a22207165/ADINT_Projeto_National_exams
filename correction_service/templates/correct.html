@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Correct answer {{ c.id }}</h2>
+<p>Exam {{ c.pdf.exam_id }} &middot; sheet {{ c.sheet_number }} &middot; question {{ c.question_number }}
+&middot; assigned professor: {{ owner if owner else 'unassigned' }}</p>
+
+<form method="post">
+  <label for="grade">Grade (0 to {{ '%g' % max_grade }})</label>
+  <input type="text" name="grade" id="grade" required value="{{ c.grade if c.grade is not none else '' }}">
+  <button type="submit">Save grade</button>
+  <a href="{{ url_for('list_assigned') }}">Back to list</a>
+</form>
+
+<p class="muted">The identification code is hidden on this page.</p>
+<img class="page" src="{{ url_for('correction_image', correction_id=c.id) }}" alt="Scanned answer">
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Upload the scan of the exam resolutions</h2>
+<p>One PDF with all the scanned sheets of an exam. Every sheet has 5 pages: the first
+(instructions) is discarded and the other 4 become questions 1 to 4.</p>
+<form method="post" enctype="multipart/form-data">
+  <label for="exam_id">Exam identifier</label>
+  <input type="text" name="exam_id" id="exam_id" required value="{{ request.form.get('exam_id', '') }}">
+
+  <label for="file">Scanned PDF</label>
+  <input type="file" name="file" id="file" accept=".pdf,application/pdf" required>
+
+  <p><button type="submit">Upload</button></p>
+</form>
+
+<h3>Uploaded scans</h3>
+<table>
+  <thead><tr><th>Id</th><th>Exam</th><th>File</th><th>Sheets</th><th>Uploaded</th></tr></thead>
+  <tbody>
+  {% for pdf, sheets in uploads %}
+    <tr>
+      <td>{{ pdf.id }}</td><td>{{ pdf.exam_id }}</td><td>{{ pdf.filename }}</td>
+      <td>{{ sheets }}</td><td>{{ pdf.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5">Nothing uploaded yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

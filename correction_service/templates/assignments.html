@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Assign a professor to an exam question</h2>
+<p>Each question is corrected by a single professor; assigning it again replaces the previous professor.</p>
+<form method="post">
+  <label for="exam_id">Exam identifier</label>
+  <input type="text" name="exam_id" id="exam_id" required value="{{ request.form.get('exam_id', '') }}">
+
+  <label for="question_number">Question</label>
+  <select name="question_number" id="question_number">
+    {% for q in questions %}<option value="{{ q }}">{{ q }}</option>{% endfor %}
+  </select>
+
+  <label for="professor_id">Professor identifier</label>
+  <input type="text" name="professor_id" id="professor_id" required value="{{ request.form.get('professor_id', '') }}">
+
+  <p><button type="submit">Assign</button></p>
+</form>
+
+<h3>Current assignments</h3>
+<table>
+  <thead><tr><th>Exam</th><th>Question</th><th>Professor</th></tr></thead>
+  <tbody>
+  {% for a in assignments %}
+    <tr><td>{{ a.exam_id }}</td><td>{{ a.question_number }}</td><td>{{ a.professor_id }}</td></tr>
+  {% else %}
+    <tr><td colspan="3">No assignments yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
