@@ -1,75 +1,87 @@
-"""PDF helpers for the Correction Service (no Flask / database dependency)."""
-import io
+"""PDF helpers for the Correction Service (no Flask / database dependency).
 
-from pypdf import PdfReader, PdfWriter
+split_pdf_into_pages and cover_qr_codes_with_gray_squares come unchanged from
+the teacher-provided process_student_answers.py.
+"""
+import cv2
+import numpy as np
+import pymupdf
+
+from process_student_answers import cover_qr_codes_with_gray_squares, split_pdf_into_pages
 
 # Each resolution sheet has 5 pages. Page 1 only holds the exam instructions and
 # is discarded; pages 2-5 are questions 1-4.
 SHEET_PAGES = 5
 QUESTIONS = 4
 
-# Area covered with a black box before a page is shown to a professor, as
-# fractions of the page: (left, top, right, bottom).
-# ASSUMPTION: QR code in the top-right corner. Adjust to match the layout
-# produced by generate_resolution_sheets.py.
-QR_REGION = (0.70, 0.00, 1.00, 0.20)
-
 
 class ScanError(ValueError):
     """The uploaded file cannot be used as a scan of resolution sheets."""
 
 
+def page_grayscale(page):
+    pixmap = page.get_pixmap(
+        matrix=pymupdf.Matrix(2, 2),
+        colorspace=pymupdf.csRGB,
+        alpha=False,
+    )
+    image = np.frombuffer(pixmap.samples, dtype=np.uint8).reshape(pixmap.height, pixmap.width, 3)
+    return pixmap, cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+
+def read_qr_values(page_document):
+    """Decoded QR code values found in a one-page document."""
+    _, grayscale = page_grayscale(page_document[0])
+    found, values, _, _ = cv2.QRCodeDetector().detectAndDecodeMulti(grayscale)
+    return [v for v in values if v] if found else []
+
+
 def split_scan(data):
     """Split a scanned PDF into question pages.
 
-    Returns a list of (sheet_number, question_number, single_page_pdf_bytes),
-    with sheet_number starting at 1 (order of the sheets in the scan) and
-    question_number in 1..QUESTIONS. The instructions page of every sheet is
-    dropped.
+    Returns a list of (sheet_number, sheet_id, question_number, single_page_pdf_bytes),
+    with sheet_number starting at 1 (order of the sheets in the scan), sheet_id
+    read from the QR code of the sheet and question_number in 1..QUESTIONS.
+    The instructions page of every sheet is dropped.
     """
     try:
-        reader = PdfReader(io.BytesIO(data))
-        pages = list(reader.pages)
+        document = pymupdf.open(stream=data, filetype="pdf")
     except Exception:
         raise ScanError("The file is not a readable PDF.")
 
-    if not pages or len(pages) % SHEET_PAGES:
-        raise ScanError(
-            "The PDF has %d page(s); it must be a multiple of %d (one block of %d pages per resolution sheet)."
-            % (len(pages), SHEET_PAGES, SHEET_PAGES)
-        )
+    pages = split_pdf_into_pages(document)
+    try:
+        if not pages or len(pages) % SHEET_PAGES:
+            raise ScanError(
+                "The PDF has %d page(s); it must be a multiple of %d (one block of %d pages per resolution sheet)."
+                % (len(pages), SHEET_PAGES, SHEET_PAGES)
+            )
 
-    result = []
-    for index, page in enumerate(pages):
-        position = index % SHEET_PAGES  # 0 = instructions page
-        if position == 0:
-            continue
-        writer = PdfWriter()
-        writer.add_page(page)
-        buffer = io.BytesIO()
-        writer.write(buffer)
-        result.append((index // SHEET_PAGES + 1, position, buffer.getvalue()))
-    return result
+        result = []
+        for start in range(0, len(pages), SHEET_PAGES):
+            sheet_number = start // SHEET_PAGES + 1
+            sheet_id = None
+            for page_document in pages[start:start + SHEET_PAGES]:
+                for value in read_qr_values(page_document):
+                    if value.isdigit():
+                        sheet_id = int(value)
+                        break
+                if sheet_id is not None:
+                    break
+            if sheet_id is None:
+                raise ScanError("No readable QR code on sheet %d of the scan." % sheet_number)
+            for question in range(1, QUESTIONS + 1):
+                result.append((sheet_number, sheet_id, question, pages[start + question].tobytes()))
+        return result
+    finally:
+        document.close()
+        for page_document in pages:
+            page_document.close()
 
 
 def render_page_png(page_pdf, zoom=1.5, hide_qr=True):
-    """Render a single-page PDF as PNG bytes, optionally blacking out the QR code.
-
-    Needs PyMuPDF (pip install pymupdf), imported lazily so the rest of the
-    service works without it.
-    """
-    import fitz  # PyMuPDF
-
-    with fitz.open(stream=page_pdf, filetype="pdf") as doc:
-        page = doc[0]
+    """Render a single-page PDF as PNG bytes, optionally covering the QR code."""
+    with pymupdf.open(stream=page_pdf, filetype="pdf") as doc:
         if hide_qr:
-            rect = page.rect
-            left, top, right, bottom = QR_REGION
-            box = fitz.Rect(
-                rect.x0 + left * rect.width,
-                rect.y0 + top * rect.height,
-                rect.x0 + right * rect.width,
-                rect.y0 + bottom * rect.height,
-            )
-            page.draw_rect(box, color=None, fill=(0, 0, 0), overlay=True)
-        return page.get_pixmap(matrix=fitz.Matrix(zoom, zoom)).tobytes("png")
+            cover_qr_codes_with_gray_squares([doc])
+        return doc[0].get_pixmap(matrix=pymupdf.Matrix(zoom, zoom)).tobytes("png")

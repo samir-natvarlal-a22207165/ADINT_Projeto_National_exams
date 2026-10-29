@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Printing Service</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    nav a { margin-right: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; }
+    th { background: #f3f3f3; }
+    .muted { color: #777; }
+  </style>
+</head>
+<body>
+  <h1>Printing Service</h1>
+  <nav>
+    <a href="{{ url_for('list_exams') }}">Printed exams</a>
+  </nav>
+  {% block content %}{% endblock %}
+</body>
+</html>

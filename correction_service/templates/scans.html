@@ -5,7 +5,7 @@
 {% for exam_id, sheets in exams.items() %}
   <h3>Exam {{ exam_id }}</h3>
   {% for key, questions in sheets.items() %}
-    <h4>Sheet {{ key[1] }} <span class="muted">(scan {{ key[0] }})</span></h4>
+    <h4>Sheet {{ questions[0].sheet_id }} <span class="muted">(position {{ key[1] }} in scan {{ key[0] }})</span></h4>
     <table>
       <thead><tr><th>Question</th><th>Grade</th><th>Scanned page</th></tr></thead>
       <tbody>

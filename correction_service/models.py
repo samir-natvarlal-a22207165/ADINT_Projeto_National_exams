@@ -47,6 +47,8 @@ class QuestionCorrection(db.Model):
     pdf_id = db.Column(db.Integer, db.ForeignKey("exam_correction_pdfs.id"), nullable=False)
     # position of the sheet inside the uploaded scan (1-based)
     sheet_number = db.Column(db.Integer, nullable=False)
+    # identifier read from the QR code of the sheet (Printing Service)
+    sheet_id = db.Column(db.Integer, nullable=False)
     question_number = db.Column(db.Integer, nullable=False)
     page_pdf = db.deferred(db.Column(db.LargeBinary, nullable=False))
     evaluated = db.Column(db.Boolean, nullable=False, default=False)

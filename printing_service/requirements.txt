@@ -1,0 +1,6 @@
+Flask
+Flask-SQLAlchemy
+Flask-XML-RPC-Re
+PyMuPDF
+qrcode
+pillow

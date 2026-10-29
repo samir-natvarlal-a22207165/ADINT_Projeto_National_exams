@@ -91,9 +91,14 @@ def upload_scan():
             flash(str(e), "error")
         else:
             pdf = ExamCorrectionPdf(exam_id=exam_id, filename=file.filename, pdf_file=data)
-            for sheet_number, question, page_pdf in pages:
+            for sheet_number, sheet_id, question, page_pdf in pages:
                 pdf.corrections.append(
-                    QuestionCorrection(sheet_number=sheet_number, question_number=question, page_pdf=page_pdf)
+                    QuestionCorrection(
+                        sheet_number=sheet_number,
+                        sheet_id=sheet_id,
+                        question_number=question,
+                        page_pdf=page_pdf,
+                    )
                 )
             db.session.add(pdf)
             db.session.commit()
@@ -140,7 +145,7 @@ def correct(correction_id):
             c.grade = grade
             c.evaluated = True
             db.session.commit()
-            flash("Grade %g saved for question %d of sheet %d." % (grade, c.question_number, c.sheet_number), "ok")
+            flash("Grade %g saved for question %d of sheet %d." % (grade, c.question_number, c.sheet_id), "ok")
             return redirect(url_for("list_assigned"))
     owner = assigned_professors().get((c.pdf.exam_id, c.question_number))
     return render_template("correct.html", c=c, owner=owner, max_grade=MAX_GRADE)

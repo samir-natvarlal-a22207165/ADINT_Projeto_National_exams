@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Exams with resolution sheets</h2>
+<table>
+  <thead>
+    <tr><th>Exam</th><th>Course</th><th>Date</th><th>Sheets</th><th>Printed at</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+  {% for j in jobs %}
+    <tr>
+      <td>{{ j.exam_id }}</td>
+      <td>{{ j.course }}</td>
+      <td>{{ j.date }}</td>
+      <td>{{ j.sheets | length }}</td>
+      <td>{{ j.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+      <td>
+        <a href="{{ url_for('download_sheets', exam_id=j.exam_id) }}">Download PDF</a>
+        <a href="{{ url_for('list_sheets', exam_id=j.exam_id) }}">Sheets</a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="6">No resolution sheets printed yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

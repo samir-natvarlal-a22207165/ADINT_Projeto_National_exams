@@ -1,4 +1,5 @@
 Flask
 Flask-SQLAlchemy
-pypdf
 PyMuPDF
+opencv-python
+numpy
