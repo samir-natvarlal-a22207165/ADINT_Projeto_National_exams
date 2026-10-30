@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>User Service</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    nav a { margin-right: 1rem; }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; }
+    th { background: #f3f3f3; }
+    label { display: block; margin: .6rem 0 .2rem; }
+    .msg { padding: .5rem .8rem; margin: .5rem 0; border-radius: 4px; }
+    .ok { background: #e3f6e3; }
+    .error { background: #fbe3e3; }
+    code { background: #f3f3f3; padding: 0 .25rem; }
+  </style>
+</head>
+<body>
+  <h1>User Service</h1>
+  <nav>
+    <a href="{{ url_for('list_users') }}">List users</a>
+    <a href="{{ url_for('add_user') }}">Add user</a>
+    <a href="{{ url_for('bulk_add_users') }}">Bulk add users</a>
+  </nav>
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="msg {{ category }}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</body>
+</html>

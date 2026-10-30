@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Users</h2>
+<form method="get">
+  <label for="role">Filter by role</label>
+  <select name="role" id="role" onchange="this.form.submit()">
+    <option value="">all</option>
+    {% for r in roles %}
+    <option value="{{ r }}" {% if r==selected %}selected{% endif %}>{{ r }}</option>
+    {% endfor %}
+  </select>
+</form>
+<table>
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Identifier</th>
+      <th>Name</th>
+      <th>Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.id_extra if u.id_extra is not none else '' }}</td>
+      <td>{{ u.name }}</td>
+      <td>{{ u.role }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="4">No users yet.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
