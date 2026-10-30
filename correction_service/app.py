@@ -52,6 +52,14 @@ def assigned_professor(answer, assignments):
     return None
 
 
+def scanned_exams():
+    """(exam identifiers, courses) given in the saved uploads, for the dropdowns of AD_4."""
+    pdfs = ExamCorrectionPdf.query.filter(ExamCorrectionPdf.confirmed.is_(True))
+    exam_ids = pdfs.filter(ExamCorrectionPdf.exam_id.isnot(None)).with_entities(ExamCorrectionPdf.exam_id).distinct()
+    courses = pdfs.filter(ExamCorrectionPdf.course.isnot(None)).with_entities(ExamCorrectionPdf.course).distinct()
+    return sorted(e for (e,) in exam_ids), sorted((c for (c,) in courses), key=str.lower)
+
+
 @app.route("/")
 def index():
     return redirect(url_for("list_assigned"))
@@ -60,9 +68,15 @@ def index():
 # AD_4 - assign professors to the correction of a specific exam question
 @app.route("/assignments", methods=["GET", "POST"])
 def assignments():
+    exam_ids, courses = scanned_exams()
     if request.method == "POST":
         try:
             exam_id, course = parse_exam(request.form)
+            # the dropdowns only offer the exams of the uploaded scans
+            if exam_id is not None and exam_id not in exam_ids:
+                raise ValueError("exam %d is not in any uploaded scan" % exam_id)
+            if course is not None and course not in courses:
+                raise ValueError("course '%s' is not in any uploaded scan" % course)
             question = parse_positive_int(request.form.get("question_number"), "question number")
             if question > QUESTIONS:
                 raise ValueError("question number must be between 1 and %d" % QUESTIONS)
@@ -94,7 +108,10 @@ def assignments():
     rows = ProfessorAssignment.query.order_by(
         ProfessorAssignment.exam_id, ProfessorAssignment.course, ProfessorAssignment.question_number
     ).all()
-    return render_template("assignments.html", assignments=rows, questions=range(1, QUESTIONS + 1))
+    return render_template(
+        "assignments.html", assignments=rows, questions=range(1, QUESTIONS + 1),
+        exam_ids=exam_ids, courses=courses,
+    )
 
 
 def read_upload(data):

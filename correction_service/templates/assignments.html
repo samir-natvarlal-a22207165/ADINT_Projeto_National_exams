@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Assign a professor to an exam question</h2>
+{% if not exam_ids and not courses %}
+<p class="muted">No exams yet: the exams to choose from are the ones given when uploading a scan.</p>
+{% endif %}
 <form method="post">
   <label for="exam_id">Exam identifier</label>
-  <input type="text" name="exam_id" id="exam_id" value="{{ request.form.get('exam_id', '') }}">
+  <select name="exam_id" id="exam_id">
+    <option value="">-</option>
+    {% for e in exam_ids %}<option value="{{ e }}" {% if request.form.get('exam_id') == e|string %}selected{% endif %}>{{ e }}</option>{% endfor %}
+  </select>
 
   <label for="course">Course</label>
-  <input type="text" name="course" id="course" value="{{ request.form.get('course', '') }}">
+  <select name="course" id="course">
+    <option value="">-</option>
+    {% for c in courses %}<option value="{{ c }}" {% if request.form.get('course') == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+  </select>
 
   <label for="question_number">Question</label>
   <select name="question_number" id="question_number">
