@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Some sheets were already uploaded</h2>
+<div class="msg warning">
+  <strong>{{ conflicts | length }} sheet(s) of '{{ pdf.filename }}' (exam {{ pdf.exam_label }}) already exist.</strong>
+  Overwriting replaces their pages and deletes the grades already given to them.
+</div>
+<table>
+  <thead><tr><th>Sheet</th><th>Previous upload</th><th>Uploaded on</th><th>Graded answers</th></tr></thead>
+  <tbody>
+  {% for sheet_id, previous, graded in conflicts %}
+    <tr>
+      <td>{{ sheet_id }}</td>
+      <td>{{ previous.filename }}</td>
+      <td>{{ previous.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      <td>{{ graded }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4">No conflicts.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p>
+  <form class="inline" method="post" action="{{ url_for('confirm_upload', pdf_id=pdf.id) }}">
+    <button type="submit">Overwrite</button>
+  </form>
+  <form class="inline" method="post" action="{{ url_for('cancel_upload', pdf_id=pdf.id) }}">
+    <button type="submit">Cancel</button>
+  </form>
+</p>
+{% endblock %}

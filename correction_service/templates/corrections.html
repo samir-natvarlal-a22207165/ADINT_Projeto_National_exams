@@ -1,24 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Answers to correct</h2>
-<p class="muted">All answers are listed, whoever they are assigned to (no authentication in Part 1).</p>
 <table>
   <thead>
-    <tr><th>Id</th><th>Exam</th><th>Sheet</th><th>Question</th><th>Assigned professor</th><th>Status</th><th></th></tr>
+    <tr><th>Answer</th><th>Exam</th><th>Question</th><th>Assigned professor</th><th>Status</th><th></th></tr>
   </thead>
   <tbody>
   {% for c, professor in rows %}
     <tr>
       <td>{{ c.id }}</td>
-      <td>{{ c.pdf.exam_id }}</td>
-      <td>{{ c.sheet_id }}</td>
+      <td>{{ c.exam_label }}</td>
       <td>{{ c.question_number }}</td>
       <td>{{ professor if professor else 'unassigned' }}</td>
       <td>{{ 'corrected (' ~ c.grade ~ ')' if c.evaluated else 'pending' }}</td>
       <td><a href="{{ url_for('correct', correction_id=c.id) }}">{{ 'Review' if c.evaluated else 'Correct' }}</a></td>
     </tr>
   {% else %}
-    <tr><td colspan="7">No answers yet. Upload a scan first.</td></tr>
+    <tr><td colspan="6">No answers yet. Upload a scan first.</td></tr>
   {% endfor %}
   </tbody>
 </table>

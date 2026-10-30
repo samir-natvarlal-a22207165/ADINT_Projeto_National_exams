@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Enroll students: exam {{ exam.id }} ({{ exam.course }}, {{ exam.date }})</h2>
-<p>Upload a UTF-8 CSV file with a header containing <code>student_id</code>
-(one positive integer per row). Students already enrolled are ignored.</p>
+{% if exam.printing_ordered %}
+<p>Printing ordered: enrollments are locked.</p>
+{% else %}
+<p>CSV column: <code>student_id</code>.</p>
 <form method="post" enctype="multipart/form-data">
   <input type="file" name="file" accept=".csv,text/csv" required>
   <p><button type="submit">Upload</button></p>
 </form>
+{% endif %}
 
 {% if added is defined %}
   <div class="msg ok">{{ added }} student(s) enrolled, {{ duplicates }} already enrolled.</div>

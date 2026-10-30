@@ -3,21 +3,20 @@
 <h2>Corrected answers</h2>
 <table>
   <thead>
-    <tr><th>Id</th><th>Exam</th><th>Sheet</th><th>Question</th><th>Professor</th><th>Grade</th><th></th></tr>
+    <tr><th>Answer</th><th>Exam</th><th>Question</th><th>Professor</th><th>Grade</th><th></th></tr>
   </thead>
   <tbody>
   {% for c, professor in rows %}
     <tr>
       <td>{{ c.id }}</td>
-      <td>{{ c.pdf.exam_id }}</td>
-      <td>{{ c.sheet_id }}</td>
+      <td>{{ c.exam_label }}</td>
       <td>{{ c.question_number }}</td>
       <td>{{ professor if professor else 'unassigned' }}</td>
       <td>{{ c.grade }}</td>
       <td><a href="{{ url_for('correct', correction_id=c.id) }}">Review</a></td>
     </tr>
   {% else %}
-    <tr><td colspan="7">Nothing corrected yet.</td></tr>
+    <tr><td colspan="6">Nothing corrected yet.</td></tr>
   {% endfor %}
   </tbody>
 </table>

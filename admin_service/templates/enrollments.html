@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Student enrollments</h2>
+<form method="get">
+  <fieldset>
+    <legend>Student</legend>
+    <label class="inline"><input type="radio" name="by" value="choose" {% if by != 'id' %}checked{% endif %}> Choose</label>
+    <select name="student_choice" id="student_choice">
+      <option value="">all students</option>
+      {% for s in students %}
+      <option value="{{ s }}" {% if by != 'id' and s == student_id %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <label class="inline"><input type="radio" name="by" value="id" {% if by == 'id' %}checked{% endif %}> By identifier</label>
+    <input type="text" name="student_typed" id="student_typed" size="10"
+           value="{{ student_id if by == 'id' and student_id is not none else '' }}">
+  </fieldset>
+
+  <label for="course">Course</label>
+  <select name="course" id="course">
+    <option value="">all courses</option>
+    {% for c in courses %}
+    <option value="{{ c }}" {% if c == course %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+
+  <p>
+    <button type="submit">Filter</button>
+    <a href="{{ url_for('enrollments') }}">Clear</a>
+  </p>
+</form>
+
+<table>
+  <thead><tr><th>Exam</th><th>Course</th><th>Date</th><th>Student</th><th></th></tr></thead>
+  <tbody>
+  {% for enrollment, exam in rows %}
+    <tr>
+      <td>{{ exam.id }}</td>
+      <td>{{ exam.course }}</td>
+      <td>{{ exam.date }}</td>
+      <td>{{ enrollment.student_id }}</td>
+      <td>
+        <form class="inline" method="post"
+              action="{{ url_for('unenroll', exam_id=exam.id, student_id=enrollment.student_id) }}">
+          <button type="submit" {% if exam.printing_ordered %}disabled title="Printing already ordered"{% endif %}>Unenroll</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5">No enrollments.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  // only the selected way of picking the student is enabled
+  function syncStudentInputs() {
+    var byId = document.querySelector('input[name="by"][value="id"]').checked;
+    document.getElementById("student_choice").disabled = byId;
+    document.getElementById("student_typed").disabled = !byId;
+  }
+  document.querySelectorAll('input[name="by"]').forEach(function (radio) {
+    radio.addEventListener("change", syncStudentInputs);
+  });
+  syncStudentInputs();
+</script>
+{% endblock %}

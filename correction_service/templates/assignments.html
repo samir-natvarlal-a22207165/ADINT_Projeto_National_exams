@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Assign a professor to an exam question</h2>
-<p>Each question is corrected by a single professor; assigning it again replaces the previous professor.</p>
 <form method="post">
   <label for="exam_id">Exam identifier</label>
-  <input type="text" name="exam_id" id="exam_id" required value="{{ request.form.get('exam_id', '') }}">
+  <input type="text" name="exam_id" id="exam_id" value="{{ request.form.get('exam_id', '') }}">
+
+  <label for="course">Course</label>
+  <input type="text" name="course" id="course" value="{{ request.form.get('course', '') }}">
 
   <label for="question_number">Question</label>
   <select name="question_number" id="question_number">
@@ -12,7 +14,10 @@
   </select>
 
   <label for="professor_id">Professor identifier</label>
-  <input type="text" name="professor_id" id="professor_id" required value="{{ request.form.get('professor_id', '') }}">
+  <input type="text" name="professor_id" id="professor_id" value="{{ request.form.get('professor_id', '') }}">
+
+  <label for="professor_name">Professor name</label>
+  <input type="text" name="professor_name" id="professor_name" value="{{ request.form.get('professor_name', '') }}">
 
   <p><button type="submit">Assign</button></p>
 </form>
@@ -22,7 +27,7 @@
   <thead><tr><th>Exam</th><th>Question</th><th>Professor</th></tr></thead>
   <tbody>
   {% for a in assignments %}
-    <tr><td>{{ a.exam_id }}</td><td>{{ a.question_number }}</td><td>{{ a.professor_id }}</td></tr>
+    <tr><td>{{ a.exam_label }}</td><td>{{ a.question_number }}</td><td>{{ a.professor_label }}</td></tr>
   {% else %}
     <tr><td colspan="3">No assignments yet.</td></tr>
   {% endfor %}

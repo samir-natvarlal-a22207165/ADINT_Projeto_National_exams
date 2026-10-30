@@ -15,6 +15,8 @@ class PrintJob(db.Model):
     course = db.Column(db.String(120), nullable=False)
     date = db.Column(db.Date, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    # exam-<id>_<timestamp>_user-<id of the user that ordered the printing>.pdf
+    filename = db.Column(db.String(255), nullable=False)
     pdf_file = db.deferred(db.Column(db.LargeBinary, nullable=False))
 
     sheets = db.relationship(
@@ -31,3 +33,6 @@ class ResolutionSheet(db.Model):
     exam_id = db.Column(db.Integer, db.ForeignKey("print_jobs.exam_id"), nullable=False)
     # position of the sheet inside the printed PDF (1-based)
     sheet_number = db.Column(db.Integer, nullable=False)
+    # Filled in when an invigilator scans the QR code and assigns the sheet to a student.
+    student_id = db.Column(db.Integer, nullable=True)
+    invigilator_id = db.Column(db.Integer, nullable=True)

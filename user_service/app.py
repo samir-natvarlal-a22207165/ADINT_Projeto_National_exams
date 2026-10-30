@@ -1,15 +1,16 @@
-import csv
-import io
 import os
 
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from models import ROLES, User, db
+from utils import BoundedIntConverter, parse_positive_int, read_csv_upload
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+app.url_map.converters["int"] = BoundedIntConverter
 app.config["SECRET_KEY"] = "dev-user-service"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE_DIR, "users.sqlite")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -24,28 +25,40 @@ def normalize_role(raw):
     return role if role in ROLES else None
 
 
-def parse_identifier(raw):
-    """Empty -> None (auto id). Otherwise must be a positive integer."""
-    raw = (raw or "").strip()
-    if not raw:
-        return None
-    if not raw.isdigit() or int(raw) <= 0:
-        raise ValueError("identifier must be a positive integer")
-    return int(raw)
+def next_student_number():
+    return (db.session.query(func.max(User.student_number)).scalar() or 0) + 1
 
 
-def build_user(name, identifier, password, role):
-    name = (name or "").strip()
+def build_user(fields):
+    """User from a form or a CSV row, plus warnings about identifiers that were replaced.
+
+    id and student_number are optional; one that is already taken is replaced
+    by a new one (the database picks the id, the student number is the next free one).
+    """
+    name = (fields.get("name") or "").strip()
     if not name:
         raise ValueError("name is required")
+    password = fields.get("password")
     if not password:
         raise ValueError("password is required")
-    role = normalize_role(role)
+    role = normalize_role(fields.get("role"))
     if role is None:
         raise ValueError("role must be one of: " + ", ".join(ROLES))
-    user = User(id_extra=parse_identifier(identifier), name=name, role=role)
+    user_id = parse_positive_int(fields.get("id"), "id", required=False)
+    number = parse_positive_int(fields.get("student_number"), "student number", required=False)
+
+    warnings = []
+    if user_id is not None and db.session.get(User, user_id) is not None:
+        warnings.append("id %d already exists, a new one was assigned" % user_id)
+        user_id = None
+    if number is not None and User.query.filter(User.student_number == number).first() is not None:
+        new_number = next_student_number()
+        warnings.append("student number %d already exists, %d was assigned" % (number, new_number))
+        number = new_number
+
+    user = User(id=user_id, student_number=number, name=name, role=role)
     user.set_password(password)
-    return user
+    return user, warnings
 
 
 @app.route("/")
@@ -59,7 +72,7 @@ def list_users():
     role = request.args.get("role")
     query = User.query.order_by(User.id)
     if role in ROLES:
-        query = query.filter_by(role=role)
+        query = query.filter(User.role == role)
     return render_template("users.html", users=query.all(), roles=ROLES, selected=role)
 
 
@@ -68,12 +81,7 @@ def list_users():
 def add_user():
     if request.method == "POST":
         try:
-            user = build_user(
-                request.form.get("name"),
-                request.form.get("identifier"),
-                request.form.get("password"),
-                request.form.get("role"),
-            )
+            user, warnings = build_user(request.form)
             db.session.add(user)
             db.session.commit()
         except ValueError as e:
@@ -83,60 +91,53 @@ def add_user():
             db.session.rollback()
             flash("A user with that identifier already exists.", "error")
         else:
+            for warning in warnings:
+                flash(warning, "warning")
             flash("User %d (%s) added." % (user.id, user.name), "ok")
             return redirect(url_for("list_users"))
     return render_template("add_user.html", roles=ROLES)
 
 
-# SU_3 - bulk add users from a CSV file: name,identifier,password,role
+# SU_3 - bulk add users from a CSV file: name,password,role and optionally id,student_number
 @app.route("/users/bulk", methods=["GET", "POST"])
 def bulk_add_users():
     if request.method == "POST":
-        file = request.files.get("file")
-        if not file or not file.filename:
-            flash("Choose a CSV file.", "error")
-            return render_template("bulk_add.html", roles=ROLES)
-
         try:
-            text = file.read().decode("utf-8-sig")
-        except UnicodeDecodeError:
-            flash("File must be UTF-8 encoded.", "error")
+            reader = read_csv_upload(request.files.get("file"))
+        except ValueError as e:
+            flash(str(e), "error")
             return render_template("bulk_add.html", roles=ROLES)
-
-        reader = csv.DictReader(io.StringIO(text))
-        reader.fieldnames = [(f or "").strip().lower() for f in (reader.fieldnames or [])]
         missing = {"name", "password", "role"} - set(reader.fieldnames)
         if missing:
             flash("Missing CSV column(s): " + ", ".join(sorted(missing)), "error")
             return render_template("bulk_add.html", roles=ROLES)
 
-        added, errors = 0, []
+        added, errors, warnings = 0, [], []
         for line_no, row in enumerate(reader, start=2):
             try:
-                user = build_user(
-                    row.get("name"), row.get("identifier"), row.get("password"), row.get("role")
-                )
+                user, row_warnings = build_user(row)
                 # savepoint so one bad row does not undo the good ones
                 with db.session.begin_nested():
                     db.session.add(user)
                 added += 1
+                warnings.extend("line %d: %s" % (line_no, w) for w in row_warnings)
             except ValueError as e:
                 errors.append("line %d: %s" % (line_no, e))
             except IntegrityError:
                 errors.append("line %d: identifier already exists" % line_no)
         db.session.commit()
 
-        return render_template("bulk_add.html", roles=ROLES, added=added, errors=errors)
+        return render_template("bulk_add.html", roles=ROLES, added=added, errors=errors, warnings=warnings)
     return render_template("bulk_add.html", roles=ROLES)
 
 
-# JSON endpoints for the other services (Admin, Proxy, ...) to use later
+# JSON endpoints for other services
 @app.route("/api/users")
 def api_users():
     role = request.args.get("role")
     query = User.query.order_by(User.id)
     if role in ROLES:
-        query = query.filter_by(role=role)
+        query = query.filter(User.role == role)
     return jsonify([u.to_dict() for u in query.all()])
 
 
@@ -147,12 +148,14 @@ def api_user(user_id):
         return jsonify({"error": "not found"}), 404
     return jsonify(user.to_dict())
 
-@app.route("/api/users/by-id-extra/<int:id_extra>")
-def api_user_by_id_extra(id_extra):
-    user = User.query.filter_by(id_extra=id_extra).first()
+
+@app.route("/api/users/by-student-number/<int:number>")
+def api_user_by_student_number(number):
+    user = User.query.filter(User.student_number == number).first()
     if user is None:
         return jsonify({"error": "not found"}), 404
     return jsonify(user.to_dict())
+
 
 if __name__ == "__main__":
     app.run(port=5001, debug=True)

@@ -14,7 +14,7 @@
       <td>{{ e.enrollments | length }}</td>
       <td>{{ "ordered" if e.printing_ordered else "not ordered" }}</td>
       <td>
-        <a href="{{ url_for('enroll_students', exam_id=e.id) }}">Enroll students</a>
+        <a href="{{ url_for('enroll_students', exam_id=e.id) }}">{{ "Enrolled students" if e.printing_ordered else "Enroll students" }}</a>
         {% if not e.printing_ordered %}
         <form class="inline" method="post" action="{{ url_for('order_printing', exam_id=e.id) }}">
           <button type="submit">Order printing</button>

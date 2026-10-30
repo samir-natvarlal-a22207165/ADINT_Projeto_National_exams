@@ -1,10 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Bulk add users</h2>
-<p>Upload a UTF-8 CSV file with the header <code>name,identifier,password,role</code>.
-  The <code>identifier</code> column is stored as the extra id; it may be empty or omitted.
-  The primary key is always generated automatically.
-  Valid roles: {{ roles | join(", ") }}.</p>
+<p>CSV columns: <code>name,password,role</code>, optionally <code>id</code> and <code>student_number</code>.
+  Roles: {{ roles | join(", ") }}.</p>
 <form method="post" enctype="multipart/form-data">
   <input type="file" name="file" accept=".csv,text/csv" required>
   <p><button type="submit">Upload</button></p>
@@ -12,6 +10,11 @@
 
 {% if added is defined %}
 <div class="msg ok">{{ added }} user(s) added.</div>
+{% if warnings %}
+<div class="msg warning">
+  <ul>{% for w in warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
 {% if errors %}
 <div class="msg error">
   <strong>{{ errors | length }} row(s) skipped:</strong>

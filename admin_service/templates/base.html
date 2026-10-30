@@ -15,6 +15,8 @@
     .error { background: #fbe3e3; }
     code { background: #f3f3f3; padding: 0 .25rem; }
     form.inline { display: inline; }
+    label.inline { display: inline; margin-right: .4rem; }
+    fieldset { border: 1px solid #ccc; margin-top: .6rem; }
   </style>
 </head>
 <body>
@@ -22,7 +24,7 @@
   <nav>
     <a href="{{ url_for('list_exams') }}">Exams</a>
     <a href="{{ url_for('schedule_exam') }}">Schedule an exam</a>
-    <a href="{{ url_for('student_lookup') }}">Student enrollments</a>
+    <a href="{{ url_for('enrollments') }}">Student enrollments</a>
   </nav>
   {% for category, message in get_flashed_messages(with_categories=true) %}
     <div class="msg {{ category }}">{{ message }}</div>
